@@ -1,13 +1,17 @@
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import app from '../../firebase/firebase.init';
+import React, { useContext, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../context/UserContext';
 
 const Login = () => {
 
-  const auth = getAuth(app);
-  const [loginUser, setLoginUser] = useState({});
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
+
+
+  const {signInUser,googleLogin,passwordReset} = useContext(AuthContext) 
+  const [userEmail,setUserEmail]=useState('')
 
     const handleLogin=(event)=>{
         event.preventDefault();
@@ -15,18 +19,61 @@ const Login = () => {
         const email = form.email.value;
         const password = form.password.value;
 
-        signInWithEmailAndPassword(auth, email, password)
+    signInUser(email, password)
       .then((result) => {
         const user = result.user;
         if(user){
-          alert("User Login sucessfully done")
+          alert("User Login sucessfully done");
         }
-        setLoginUser(user);
+        form.reset();
+        navigate(from, { replace: true });
       })
       .catch((error) => {
+        console.log(error);
+        
+      });
 
+    };
+
+    // password reset
+    const handleEmailBlur =(event)=>{ 
+      const email = event.target.value;
+      //console.log(email);
+      setUserEmail(email);
+    };
+
+    const handleForgetPassword=()=>{
+      //console.log(userEmail);
+      if(!userEmail){
+        alert("Please enter an email");
+        return;
+      }
+      passwordReset(userEmail)
+      .then(()=>{
+        alert('Please check your email and reset password by click the link');
       })
+      .catch(error=>{
+        console.log(error);
+        
+      });
 
+    };
+
+    const handleGoogleLogin=()=>{
+      googleLogin()
+      .then(result=>{
+        const user = result.user;
+        if(user){
+          alert("User Login Successfully");
+        }
+        console.log(user);
+        navigate(form, { replace: true });
+        
+      })
+      .catch(error=>{
+        console.log(error);
+        
+      });
     };
 
     return (
@@ -44,7 +91,7 @@ const Login = () => {
        <label className="label">
          <span className="label-text">Email</span>
        </label>
-       <input type="email" name="email" placeholder="Enter Your E-mail" className="input input-bordered" required />
+       <input onBlur={handleEmailBlur} type="email" name="email" placeholder="Enter Your E-mail" className="input input-bordered" required />
      </div>
      <div className="form-control">
        <label className="label">
@@ -52,7 +99,7 @@ const Login = () => {
        </label>
        <input type="password"  name="password" placeholder="Enter Your Password" className="input input-bordered" required />
        <label className="label text-center">
-         <a className="label-text-alt link link-hover">Forget Password</a>
+         <a onClick={handleForgetPassword} className="label-text-alt link link-hover">Forget Password</a>
        </label>
        <label className="label text-center">
          <Link to="/sign-up" className="label-text-alt link link-hover">New to Website ? Create an account</Link>
@@ -62,6 +109,9 @@ const Login = () => {
        <input type="submit" value="Login" className="btn btn-outline" />
      </div>
    </form>
+   <div className="form-control mt-0 m-8">
+                <button onClick={handleGoogleLogin}className="btn btn-outline">Login with Google</button>
+              </div>
  </div>
 </div>
 </div> 

@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { AuthContext } from '../../../context/UserContext';
 
+// const Header = (name) => {
 const Header = () => {
+
+   const {user,logOut} = useContext(AuthContext)
+
+   //console.log(user);
+   
+
     return (
         <div className="navbar bg-black text-white">
         <div className="flex-1">
@@ -17,7 +25,7 @@ const Header = () => {
         <div className="w-10 rounded-full">
           <img
             alt="Tailwind CSS Navbar component"
-            src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+            src={ user?.photoURL ? user?.photoURL : "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"} />
         </div>
       </div>
       <ul
@@ -25,12 +33,12 @@ const Header = () => {
         className="menu menu-sm dropdown-content bg-black rounded-box z-[1] mt-3 w-52 p-2 shadow">
         <li>
           <a className="justify-between">
-            Profile
-            <span className="badge">New</span>
+            Name
+            <span className="badge">{user?.displayName ? user?.displayName : "No Name"}</span>
           </a>
         </li>
-        <li><a>Settings</a></li>
-        <li><a>Logout</a></li>
+        <li><a>{user?.email}</a></li>
+        <li>{user?.uid ? <a onClick={logOut}>Logout</a> : <Link to='/login' >Login</Link>}</li>
       </ul>
     </div>
           </ul>

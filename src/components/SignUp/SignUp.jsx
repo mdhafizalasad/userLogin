@@ -1,14 +1,16 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import app from "../../firebase/firebase.init";
+import React, { useContext, useState } from "react";
+import { AuthContext } from "../../context/UserContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
 
 const SignUp = () => {
-  const [signUpUser, setSignUpUser] = useState({});
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
+  // error state
+  const [signUpError,setSignUpError]= useState('')
 
-  const auth = getAuth(app);
-  const googleProvider = new GoogleAuthProvider();
-
+  const {createUser,googleLogin,updateUserName,verifyEmail} = useContext(AuthContext)
   const handleRegistration = (event) => {
     event.preventDefault();
     const form = event.target;
@@ -16,43 +18,71 @@ const SignUp = () => {
     const email = form.email.value;
     const password = form.password.value;
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((result) => {
-        const user = result.user;
-        if(user){
-          alert("User created sucessfully done")
-        }
-        setSignUpUser(user);
-      })
-      .catch((error) => {
-        console.log(error);
+    if(!/(?=.*?[A-Z])/.test(password)){
+      setSignUpError("Please provide one Uppercase Letter")
+      return
+    }
 
-      })
+    if(!/(?=.*?[#?!@$%^&*-])/.test(password)){
+      setSignUpError("Please provide at least one special character of # ? ! @ $ % ^ & * - ")
+      return
+    }
+    if(password.length < 6 ){
+      setSignUpError("Please provide at least 6 characters")
+      return
+    }
+
+    setSignUpError('')
+    
+
+    createUser(email,password)
+    .then(result =>{
+      const user = result.user;
+      // if(user){
+      //   alert("User Created Successfully")
+      // }
+      console.log(user);
+      form.reset();
+      setSignUpError("");
+        //verify email
+        verifyEmail();
+      // update user 
+      updateUserName(name);
+      navigate(from, { replace: true });
+
+      
+    })
+    .catch(error=>{
+      //console.log(error.message);
+      setSignUpError(error.message);
+    });
   };
 
-  const handleGoogleLogin=()=>{
-    signInWithPopup(auth, googleProvider)
-    .then((result)=>{
+ 
+
+  const handleGoogleSignUp=()=>{
+    googleLogin()
+    .then(result=>{
       const user = result.user;
       if(user){
-        alert("User created sucessfully done by google")
+        alert("User Created Successfully");
       }
-      setSignUpUser(user);
-    }) 
-
-    .catch((error) => {
+      console.log(user);
+      navigate(from, { replace: true });
+      
+    }).catch(error=>{
       console.log(error);
-    })
-
-  }
-
+      
+    });
+  };
+  
   return (
     <div>
       <div className="hero bg-base-200 min-h-screen">
         <div className="hero-content flex-col">
-        <h1>{signUpUser?.email} {signUpUser?.displayName}</h1>
+        
           <div className="text-center">
-            <h1 className="text-3xl font-bold">Sign Up now!</h1>
+            <h1 className="text-3xl font-bold">Sign Up</h1>
           </div>
           <div className="card bg-base-100 w-96 shrink-0 shadow-2xl">
             <form onSubmit={handleRegistration} className="card-body">
@@ -91,6 +121,10 @@ const SignUp = () => {
                   className="input input-bordered"
                   required
                 />
+
+                {
+                  signUpError && <p className="text-red-500">{signUpError}</p>
+                }
                 <label className="label text-center">
                   <Link to="/login" className="label-text-alt link link-hover">
                     Already have an account? Please login
@@ -108,7 +142,7 @@ const SignUp = () => {
             </form>
 
             <div className="form-control mt-0 m-8">
-                <button onClick={handleGoogleLogin} className="btn btn-outline">Login with Google</button>
+                <button onClick={handleGoogleSignUp}className="btn btn-outline">Login with Google</button>
               </div>
           </div>
         </div>
